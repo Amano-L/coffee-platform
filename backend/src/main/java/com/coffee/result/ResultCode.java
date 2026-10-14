@@ -1,0 +1,26 @@
+package com.coffee.result;
+
+import lombok.Getter;
+/*
+    错误码枚举
+ */
+@Getter
+public enum ResultCode {
+
+    SUCCESS(0, "success"),
+
+    BAD_REQUEST(400, "请求参数错误"),
+    UNAUTHORIZED(401, "未登录或 Token 失效"),
+    FORBIDDEN(403, "无权限访问"),
+    NOT_FOUND(404, "资源不存在"),
+
+    SYSTEM_ERROR(5000, "系统异常");
+
+    private final Integer code;
+    private final String message;
+
+    ResultCode(Integer code, String message) {
+        this.code = code;
+        this.message = message;
+    }
+}

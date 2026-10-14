@@ -1,0 +1,21 @@
+cat > /Users/amano/Code/project/coffee-platform/backend/.gitignore << 'EOF'
+# ===== IDEA =====
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# ===== Java / Maven =====
+target/
+*.class
+*.jar
+*.war
+*.log
+logs/
+
+# ===== 本地敏感配置 =====
+src/main/resources/application-local.yml
+
+# ===== macOS =====
+.DS_Store
+EOF
