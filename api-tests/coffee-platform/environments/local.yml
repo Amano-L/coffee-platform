@@ -1,0 +1,7 @@
+name: local
+variables:
+  - name: baseUrl
+    value: http://localhost:8080
+  - name: apiPrefix
+    value: /api/v1
+    description: ""
