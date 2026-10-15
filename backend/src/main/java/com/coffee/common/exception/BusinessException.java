@@ -1,6 +1,6 @@
-package com.coffee.exception;
+package com.coffee.common.exception;
 
-import com.coffee.result.ResultCode;
+import com.coffee.common.result.ResultCode;
 import lombok.Getter;
 
 /*

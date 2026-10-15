@@ -1,7 +1,7 @@
-package com.coffee.exception;
+package com.coffee.common.exception;
 
-import com.coffee.result.Result;
-import com.coffee.result.ResultCode;
+import com.coffee.common.result.Result;
+import com.coffee.common.result.ResultCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;

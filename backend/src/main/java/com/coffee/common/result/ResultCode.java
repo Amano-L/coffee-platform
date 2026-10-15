@@ -1,4 +1,4 @@
-package com.coffee.result;
+package com.coffee.common.result;
 
 import lombok.Getter;
 /*
