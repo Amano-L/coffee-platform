@@ -26,6 +26,19 @@ spring:
     encoding: UTF-8
     validate-on-migrate: true
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      database: 0
+      password: ${REDIS_PASSWORD:}
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
@@ -38,3 +51,9 @@ mybatis-plus:
 logging:
   level:
     com.coffee: debug
+
+jwt:
+  secret: ${JWT_SECRET:coffee-platform-secret-key-please-change-in-production-2026}
+  expire-seconds: 604800
+  header: Authorization
+  prefix: "Bearer "

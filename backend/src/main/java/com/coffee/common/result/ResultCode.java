@@ -14,6 +14,12 @@ public enum ResultCode {
     FORBIDDEN(403, "无权限访问"),
     NOT_FOUND(404, "资源不存在"),
 
+    // 认证相关
+    USERNAME_EXISTS(4007, "用户名已存在"),
+    PHONE_EXISTS(4008, "手机号已存在"),
+    INVALID_CREDENTIALS(4009, "用户名或密码错误"),
+    ACCOUNT_DISABLED(4010, "账号已被禁用"),
+
     SYSTEM_ERROR(5000, "系统异常");
 
     private final Integer code;
