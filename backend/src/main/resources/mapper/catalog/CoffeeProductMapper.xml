@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.coffee.catalog.mapper.CoffeeProductMapper">
+
+    <select id="selectProductPage" resultType="com.coffee.catalog.vo.ProductVO">
+        SELECT
+        p.id,
+        p.name,
+        p.origin,
+        p.roast_level,
+        p.flavor_tags,
+        p.process_method,
+        p.cover_url,
+        MIN(s.price) AS min_price
+        FROM coffee_product p
+        LEFT JOIN coffee_sku s ON p.id = s.product_id AND s.deleted = 0
+        WHERE p.deleted = 0 AND p.status = 1
+        <if test="keyword != null and keyword != ''">
+            AND (p.name LIKE CONCAT('%', #{keyword}, '%') OR p.origin LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="roastLevel != null and roastLevel != ''">
+            AND p.roast_level = #{roastLevel}
+        </if>
+        <if test="flavorTag != null and flavorTag != ''">
+            AND p.flavor_tags LIKE CONCAT('%', #{flavorTag}, '%')
+        </if>
+        <if test="processMethod != null and processMethod != ''">
+            AND p.process_method = #{processMethod}
+        </if>
+        GROUP BY p.id
+        ORDER BY p.create_time DESC
+    </select>
+</mapper>
