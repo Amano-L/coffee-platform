@@ -5,18 +5,23 @@ import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapp
 import com.baomidou.mybatisplus.extension.conditions.query.QueryChainWrapper;
 import com.coffee.common.exception.BusinessException;
 import com.coffee.common.result.ResultCode;
+import com.coffee.user.dto.AddressDTO;
 import com.coffee.user.dto.UpdatePreferenceDTO;
 import com.coffee.user.dto.UpdateProfileDTO;
 import com.coffee.user.entity.User;
+import com.coffee.user.entity.UserAddress;
 import com.coffee.user.entity.UserPreference;
+import com.coffee.user.mapper.UserAddressMapper;
 import com.coffee.user.mapper.UserMapper;
 import com.coffee.user.mapper.UserPreferenceMapper;
 import com.coffee.user.service.UserService;
 
+import com.coffee.user.vo.AddressVO;
 import com.coffee.user.vo.PreferenceVO;
 import com.coffee.user.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.Arrays;
@@ -30,6 +35,8 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
 
     private final UserPreferenceMapper userPreferenceMapper;
+
+    private final UserAddressMapper userAddressMapper;
 
     @Override
     public UserVO getById(Long id) {
@@ -137,6 +144,120 @@ public class UserServiceImpl implements UserService {
         vo.setEmail(user.getEmail());
         vo.setAvatarUrl(user.getAvatarUrl());
         vo.setStatus(user.getStatus());
+        return vo;
+    }
+
+    @Override
+    public List<AddressVO> getAddressList(Long userId) {
+        List<UserAddress> list = userAddressMapper.selectList(
+                new LambdaQueryWrapper<UserAddress>()
+                        .eq(UserAddress::getUserId, userId)
+                        .orderByDesc(UserAddress::getIsDefault)
+                        .orderByDesc(UserAddress::getCreateTime)
+        );
+        return list.stream().map(this::toAddressVO).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public AddressVO addAddress(Long userId, AddressDTO dto) {
+        UserAddress address = new UserAddress();
+        address.setUserId(userId);
+        copyDtoToAddress(dto, address);
+
+        // 如果设置为了默认地址，先把其他的取消默认
+        if (address.getIsDefault() == 1) {
+            clearDefaultAddress(userId);
+        }
+
+        userAddressMapper.insert(address);
+        return toAddressVO(address);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public AddressVO updateAddress(Long userId, Long addressId, AddressDTO dto) {
+        UserAddress address = getValidAddress(userId, addressId);
+
+        copyDtoToAddress(dto, address);
+
+        // 如果修改为了默认地址，取消其他的默认
+        if (address.getIsDefault() == 1) {
+            clearDefaultAddress(userId);
+        }
+
+        userAddressMapper.updateById(address);
+        return toAddressVO(address);
+    }
+
+    @Override
+    public void deleteAddress(Long userId, Long addressId) {
+        UserAddress address = getValidAddress(userId, addressId);
+        userAddressMapper.deleteById(address.getId());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void setDefaultAddress(Long userId, Long addressId) {
+        UserAddress address = getValidAddress(userId, addressId);
+
+        // 1. 清空所有默认
+        clearDefaultAddress(userId);
+
+        // 2. 设置当前为默认
+        UserAddress update = new UserAddress();
+        update.setId(address.getId());
+        update.setIsDefault(1);
+        userAddressMapper.updateById(update);
+    }
+
+    // ===== 私有辅助方法 =====
+
+    // 获取校验过的地址（防止越权）
+    private UserAddress getValidAddress(Long userId, Long addressId) {
+        UserAddress address = userAddressMapper.selectOne(
+                new LambdaQueryWrapper<UserAddress>()
+                        .eq(UserAddress::getId, addressId)
+                        .eq(UserAddress::getUserId, userId)
+        );
+        if (address == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "地址不存在");
+        }
+        return address;
+    }
+
+    // 清除用户的所有默认地址状态
+    private void clearDefaultAddress(Long userId) {
+        UserAddress reset = new UserAddress();
+        reset.setIsDefault(0);
+        userAddressMapper.update(reset, new LambdaQueryWrapper<UserAddress>()
+                .eq(UserAddress::getUserId, userId)
+                .eq(UserAddress::getIsDefault, 1)
+        );
+    }
+
+    // DTO 转 Entity
+    private void copyDtoToAddress(AddressDTO dto, UserAddress address) {
+        address.setReceiverName(dto.getReceiverName());
+        address.setPhone(dto.getPhone());
+        address.setProvince(dto.getProvince());
+        address.setCity(dto.getCity());
+        address.setDistrict(dto.getDistrict());
+        address.setDetailAddress(dto.getDetailAddress());
+        address.setIsDefault(dto.getIsDefault());
+    }
+
+    // Entity 转 VO
+    private AddressVO toAddressVO(UserAddress address) {
+        AddressVO vo = new AddressVO();
+        vo.setId(address.getId());
+        vo.setReceiverName(address.getReceiverName());
+        vo.setPhone(address.getPhone());
+        vo.setProvince(address.getProvince());
+        vo.setCity(address.getCity());
+        vo.setDistrict(address.getDistrict());
+        vo.setDetailAddress(address.getDetailAddress());
+        vo.setIsDefault(address.getIsDefault());
         return vo;
     }
 }

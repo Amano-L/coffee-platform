@@ -2,14 +2,18 @@ package com.coffee.user.controller;
 
 import com.coffee.common.result.Result;
 import com.coffee.common.util.SecurityUtil;
+import com.coffee.user.dto.AddressDTO;
 import com.coffee.user.dto.UpdatePreferenceDTO;
 import com.coffee.user.dto.UpdateProfileDTO;
 import com.coffee.user.service.UserService;
+import com.coffee.user.vo.AddressVO;
 import com.coffee.user.vo.PreferenceVO;
 import com.coffee.user.vo.UserVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 用户接口
@@ -53,4 +57,40 @@ public class UserController {
         return Result.success(vo);
     }
 
+    // 地址列表
+    @GetMapping("/addresses")
+    public Result<List<AddressVO>> getAddressList() {
+        Long userId = SecurityUtil.getCurrentUserId();
+        return Result.success(userService.getAddressList(userId));
+    }
+
+    // 新增地址
+    @PostMapping("/addresses")
+    public Result<AddressVO> addAddress(@Valid @RequestBody AddressDTO dto) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        return Result.success(userService.addAddress(userId, dto));
+    }
+
+    // 修改地址
+    @PutMapping("/addresses/{id}")
+    public Result<AddressVO> updateAddress(@PathVariable Long id, @Valid @RequestBody AddressDTO dto) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        return Result.success(userService.updateAddress(userId, id, dto));
+    }
+
+    // 删除地址
+    @DeleteMapping("/addresses/{id}")
+    public Result<Void> deleteAddress(@PathVariable Long id) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        userService.deleteAddress(userId, id);
+        return Result.success();
+    }
+
+    // 设置默认
+    @PutMapping("/addresses/{id}/default")
+    public Result<Void> setDefaultAddress(@PathVariable Long id) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        userService.setDefaultAddress(userId, id);
+        return Result.success();
+    }
 }
