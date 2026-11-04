@@ -27,12 +27,13 @@ public class JwtUtil {
         this.secretKey = Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
     }
 
-    //  生成 Token，subject 为 userId
-    public String generateToken(Long userId) {
+    // 生成 Token，携带 userId 和 role
+    public String generateToken(Long userId, String role) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + jwtProperties.getExpireSeconds() * 1000);
         return Jwts.builder()
                 .subject(String.valueOf(userId))
+                .claim("role", role) // 加入角色信息
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(secretKey)
@@ -72,5 +73,14 @@ public class JwtUtil {
     // 获取请求头前缀
     public String getPrefix() {
         return jwtProperties.getPrefix();
+    }
+
+    // 解析 Claims
+    public Claims parseClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }

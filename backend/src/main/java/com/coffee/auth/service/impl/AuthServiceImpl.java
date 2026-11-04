@@ -89,8 +89,9 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ResultCode.ACCOUNT_DISABLED);
         }
 
-        // 生成 Token
-        String token = jwtUtil.generateToken(user.getId());
+        // 生成 Token (带上角色)
+        String role = user.getRole() != null ? user.getRole() : "USER";
+        String token = jwtUtil.generateToken(user.getId(), role);
 
         // 存 Redis
         String key = RedisKeyConstant.authTokenKey(user.getId());
