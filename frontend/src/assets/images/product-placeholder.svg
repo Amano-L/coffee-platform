@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" role="img" aria-label="咖啡商品占位图">
+  <rect width="600" height="600" fill="#F3E9DD"/>
+  <circle cx="300" cy="270" r="170" fill="#EADACA"/>
+  <circle cx="300" cy="270" r="120" fill="#F7F1EA"/>
+  <path d="M220 236h140v90a70 70 0 0 1-140 0v-90Z" fill="#3E2723"/>
+  <path d="M360 262h18a34 34 0 0 1 0 68h-18" fill="none" stroke="#3E2723" stroke-width="16" stroke-linecap="round"/>
+  <path d="M258 200c0 18-14 18-14 36M300 190c0 18-14 18-14 36M342 200c0 18-14 18-14 36" fill="none" stroke="#C08552" stroke-width="10" stroke-linecap="round"/>
+  <path d="M236 396h128" stroke="#C08552" stroke-width="8" stroke-linecap="round"/>
+  <text x="300" y="506" text-anchor="middle" font-family="Georgia, serif" font-size="28" letter-spacing="6" fill="#7B5E4B">BEAN PICK</text>
+  <text x="300" y="540" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" letter-spacing="4" fill="#A0836F">FRESHLY ROASTED</text>
+</svg>
