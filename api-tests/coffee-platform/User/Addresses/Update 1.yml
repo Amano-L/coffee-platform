@@ -1,0 +1,31 @@
+info:
+  name: Update
+  type: http
+  seq: 5
+
+http:
+  method: PUT
+  url: "{{baseUrl}}{{apiPrefix}}/users/addresses/2"
+  headers:
+    - name: Authorization
+      value: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIzIiwiaWF0IjoxNzkzNjkwMDI1LCJleHAiOjE3OTQyOTQ4MjV9.FhwF359LZr_2lJVrLBqNCYx5S7xQFG5Si2xT2F8Y02qoayBeq2-J3_5uqlWTB6rxQF2BHRW-rzNIVkg-vsoZEw
+  body:
+    type: json
+    data: |-
+      {
+        "receiverName": "黑客",
+        "phone": "13999999999",
+        "province": "未知",
+        "city": "未知",
+        "district": "未知",
+        "detailAddress": "未知",
+        "isDefault": 0
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

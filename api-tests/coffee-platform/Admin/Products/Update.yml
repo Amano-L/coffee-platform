@@ -1,0 +1,28 @@
+info:
+  name: Update
+  type: http
+  seq: 2
+
+http:
+  method: PUT
+  url: "{{baseUrl}}{{apiPrefix}}/admin/products/2"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "巴拿马 瑰夏 (新批次)",
+        "origin": "巴拿马",
+        "roastLevel": "LIGHT",
+        "flavorTags": "茉莉,白花",
+        "processMethod": "WASHED",
+        "description": "更棒的批次",
+        "coverUrl": "https://example.com/geisha-new.jpg"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

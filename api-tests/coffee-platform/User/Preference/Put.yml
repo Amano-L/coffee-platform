@@ -1,0 +1,27 @@
+info:
+  name: Put
+  type: http
+  seq: 2
+
+http:
+  method: PUT
+  url: "{{baseUrl}}{{apiPrefix}}/users/preference"
+  headers:
+    - name: Authorization
+      value: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIyIiwiaWF0IjoxNzkzNjg1MzQ2LCJleHAiOjE3OTQyOTAxNDZ9.CWvjWMaud_FEaPnX26XyuErSNlD-Al5cojLHMCK3VeCD73MZ8cXI2HBEgzb3GvnipIOmhrCubLtFrXScsslVCQ
+  body:
+    type: json
+    data: |-
+      {
+        "roastLevel": "MEDIUM",
+        "flavorTags": ["坚果", "巧克力"],
+        "processMethod": "NATURAL"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

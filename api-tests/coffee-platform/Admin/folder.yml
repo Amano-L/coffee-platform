@@ -1,0 +1,10 @@
+info:
+  name: Admin
+  type: folder
+  seq: 8
+
+request:
+  headers:
+    - name: Authorization
+      value: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzkzNzc2OTY2LCJleHAiOjE3OTQzODE3NjZ9.qW6TIxkxkovI4pA7_Oailrpi2APrrxUYASMdOKHQu9ov3aIUcD2qY8VFjZtU23ZbrAuBW5G71ZPjwM6sG7Q6LQ
+  auth: inherit

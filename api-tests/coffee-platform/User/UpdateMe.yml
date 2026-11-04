@@ -1,0 +1,19 @@
+info:
+  name: UpdateMe
+  type: http
+  seq: 2
+
+http:
+  method: PUT
+  url: "{{baseUrl}}{{apiPrefix}}/users/me"
+  headers:
+    - name: Authorization
+      value: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIyIiwiaWF0IjoxNzkyMjkyNjAzLCJleHAiOjE3OTI4OTc0MDN9.EVI96SVT891NkKUn2i8KwQyN0CS_ItDIe5klmi53ZmLR_DOE0XkffQpShjI4WpJQ86mPI9Tzh-M0wibq9kHheA
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

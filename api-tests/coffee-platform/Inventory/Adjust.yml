@@ -1,0 +1,23 @@
+info:
+  name: Adjust
+  type: http
+  seq: 2
+
+http:
+  method: PUT
+  url: "{{baseUrl}}{{apiPrefix}}/inventory/skus/1"
+  body:
+    type: json
+    data: |-
+      {
+        "changeNum": -9999,
+        "reason": "测试扣减"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

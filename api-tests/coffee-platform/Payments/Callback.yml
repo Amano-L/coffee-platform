@@ -1,0 +1,29 @@
+info:
+  name: Callback
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}{{apiPrefix}}/payments/callback"
+  headers:
+    - name: Authorization
+      value: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIyIiwiaWF0IjoxNzkzNzY5NjI0LCJleHAiOjE3OTQzNzQ0MjR9.6iw2acHUQSnPBZV3s2GqLKn3U-LenZac2Y-GtiyOZjd2NnQHDTjX_hbyP6E67u4_kqLJ7HEhzWbMpN1YZElIyg
+  body:
+    type: json
+    data: |-
+      {
+        "payNo": "PAY202611041337346021",
+        "orderNo": "COF202611041333056092",
+        "amount": 204.00,
+        "status": "SUCCESS",
+        "sign": "SUCCESS_SIGN"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

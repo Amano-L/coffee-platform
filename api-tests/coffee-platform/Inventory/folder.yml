@@ -1,0 +1,10 @@
+info:
+  name: Inventory
+  type: folder
+  seq: 9
+
+request:
+  headers:
+    - name: Authorization
+      value: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIyIiwiaWF0IjoxNzkzNzY5NjI0LCJleHAiOjE3OTQzNzQ0MjR9.6iw2acHUQSnPBZV3s2GqLKn3U-LenZac2Y-GtiyOZjd2NnQHDTjX_hbyP6E67u4_kqLJ7HEhzWbMpN1YZElIyg
+  auth: inherit

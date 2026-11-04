@@ -1,0 +1,16 @@
+info:
+  name: Skip
+  type: http
+  seq: 5
+
+http:
+  method: PUT
+  url: "{{baseUrl}}{{apiPrefix}}/subscriptions/1/skip"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

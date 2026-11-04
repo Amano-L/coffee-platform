@@ -1,0 +1,16 @@
+info:
+  name: Ship
+  type: http
+  seq: 2
+
+http:
+  method: PUT
+  url: "{{baseUrl}}{{apiPrefix}}/admin/orders/COF202611041333056092/ship"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

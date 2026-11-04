@@ -1,0 +1,19 @@
+info:
+  name: Logout
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{baseUrl}}{{apiPrefix}}/auth/logout"
+  headers:
+    - name: Authorization
+      value: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIyIiwiaWF0IjoxNzkyMDYzNDA0LCJleHAiOjE3OTI2NjgyMDR9.R9As6Bmh6DEaQTSkVsQ_yxzr1ypodvzSlH2iraVxiGO4j507T3WO7hh5HxXxndSHmu7UU5FpZ5QivbAcz_ZvGg
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

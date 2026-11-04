@@ -1,0 +1,30 @@
+info:
+  name: Create
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}{{apiPrefix}}/users/addresses"
+  headers:
+    - name: Authorization
+      value: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIyIiwiaWF0IjoxNzkzNjg5NDAxLCJleHAiOjE3OTQyOTQyMDF9.ne_NvHhO4d8TlnwbW--CysCRklSyyqEUISvgj9glVMHkPjMfNTxttrKQbDEkCZek4A-RBWOXnjbbJ8KXoSZJuw
+  body:
+    type: json
+    data: |-
+      {
+        "receiverName": "王五",
+        "province": "北京市",
+        "city": "北京市",
+        "district": "朝阳区",
+        "detailAddress": "建国路 1 号",
+        "isDefault": 2
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

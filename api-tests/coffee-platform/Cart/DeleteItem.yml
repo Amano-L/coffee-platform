@@ -1,0 +1,19 @@
+info:
+  name: DeleteItem
+  type: http
+  seq: 4
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}{{apiPrefix}}/cart/items/1"
+  headers:
+    - name: Authorization
+      value: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIyIiwiaWF0IjoxNzkzNjg5NDAxLCJleHAiOjE3OTQyOTQyMDF9.ne_NvHhO4d8TlnwbW--CysCRklSyyqEUISvgj9glVMHkPjMfNTxttrKQbDEkCZek4A-RBWOXnjbbJ8KXoSZJuw
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
