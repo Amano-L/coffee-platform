@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -35,12 +36,15 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         QueryWrapper<CoffeeOrder> sumWrapper = new QueryWrapper<>();
         sumWrapper.select("SUM(pay_amount) as total")
                 .in("status", "已支付", "待发货", "已发货", "已完成");
-        Map<String, Object> map = orderMapper.selectMaps(sumWrapper).get(0);
-        
-        // 处理返回结果 (防止没有订单时返回 null)
+        List<Map<String, Object>> sumRows = orderMapper.selectMaps(sumWrapper);
+
+        // 处理返回结果（防止没有订单时列表为空或 sum 为 null）
         BigDecimal totalSales = BigDecimal.ZERO;
-        if (map != null && map.get("total") != null) {
-            totalSales = new BigDecimal(map.get("total").toString());
+        if (!sumRows.isEmpty()) {
+            Map<String, Object> map = sumRows.get(0);
+            if (map != null && map.get("total") != null) {
+                totalSales = new BigDecimal(map.get("total").toString());
+            }
         }
         vo.setTotalSales(totalSales);
 

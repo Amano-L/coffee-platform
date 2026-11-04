@@ -3,7 +3,9 @@ package com.coffee.cart.controller;
 import com.coffee.cart.dto.AddCartItemDTO;
 import com.coffee.cart.dto.UpdateCartItemDTO;
 import com.coffee.cart.service.CartService;
+import com.coffee.cart.vo.AddCartItemVO;
 import com.coffee.cart.vo.CartVO;
+import com.coffee.cart.vo.UpdateCartItemVO;
 import com.coffee.common.result.Result;
 import com.coffee.common.util.SecurityUtil;
 import jakarta.validation.Valid;
@@ -27,17 +29,15 @@ public class CartController {
     }
 
     @PostMapping("/items")
-    public Result<Void> addItem(@Valid @RequestBody AddCartItemDTO dto) {
+    public Result<AddCartItemVO> addItem(@Valid @RequestBody AddCartItemDTO dto) {
         Long userId = SecurityUtil.getCurrentUserId();
-        cartService.addItem(userId, dto);
-        return Result.success();
+        return Result.success(cartService.addItem(userId, dto));
     }
 
     @PutMapping("/items/{id}")
-    public Result<Void> updateItem(@PathVariable Long id, @Valid @RequestBody UpdateCartItemDTO dto) {
+    public Result<UpdateCartItemVO> updateItem(@PathVariable Long id, @Valid @RequestBody UpdateCartItemDTO dto) {
         Long userId = SecurityUtil.getCurrentUserId();
-        cartService.updateItem(userId, id, dto);
-        return Result.success();
+        return Result.success(cartService.updateItem(userId, id, dto));
     }
 
     @DeleteMapping("/items/{id}")

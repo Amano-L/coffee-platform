@@ -5,6 +5,7 @@ import com.coffee.common.result.Result;
 import com.coffee.inventory.dto.AdjustStockDTO;
 import com.coffee.inventory.entity.InventoryLog;
 import com.coffee.inventory.service.InventoryService;
+import com.coffee.inventory.vo.InventorySkuPageVO;
 import com.coffee.inventory.vo.InventorySkuVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,14 @@ import org.springframework.web.bind.annotation.*;
 public class InventoryController {
 
     private final InventoryService inventoryService;
+
+    @GetMapping("/skus")
+    public Result<IPage<InventorySkuPageVO>> getSkuPage(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size) {
+        return Result.success(inventoryService.getSkuPage(keyword, page, size));
+    }
 
     @GetMapping("/skus/{skuId}")
     public Result<InventorySkuVO> getSkuStock(@PathVariable Long skuId) {

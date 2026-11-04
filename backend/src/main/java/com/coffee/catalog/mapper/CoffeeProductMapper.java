@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.coffee.catalog.entity.CoffeeProduct;
+import com.coffee.admin.vo.AdminProductVO;
 import com.coffee.catalog.vo.ProductVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -21,5 +22,13 @@ public interface CoffeeProductMapper extends BaseMapper<CoffeeProduct> {
             @Param("roastLevel") String roastLevel,
             @Param("flavorTag") String flavorTag,
             @Param("processMethod") String processMethod
+    );
+
+    // 后台商品分页，包含下架商品与状态
+    IPage<AdminProductVO> selectAdminProductPage(
+            Page<AdminProductVO> page,
+            @Param("keyword") String keyword,
+            @Param("roastLevel") String roastLevel,
+            @Param("status") Integer status
     );
 }

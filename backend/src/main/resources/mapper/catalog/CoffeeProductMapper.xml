@@ -30,4 +30,32 @@
         GROUP BY p.id
         ORDER BY p.create_time DESC
     </select>
+
+    <select id="selectAdminProductPage" resultType="com.coffee.admin.vo.AdminProductVO">
+        SELECT
+        p.id,
+        p.name,
+        p.origin,
+        p.roast_level,
+        p.flavor_tags,
+        p.process_method,
+        p.cover_url,
+        p.status,
+        p.create_time,
+        MIN(s.price) AS min_price
+        FROM coffee_product p
+        LEFT JOIN coffee_sku s ON p.id = s.product_id AND s.deleted = 0
+        WHERE p.deleted = 0
+        <if test="keyword != null and keyword != ''">
+            AND (p.name LIKE CONCAT('%', #{keyword}, '%') OR p.origin LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="roastLevel != null and roastLevel != ''">
+            AND p.roast_level = #{roastLevel}
+        </if>
+        <if test="status != null">
+            AND p.status = #{status}
+        </if>
+        GROUP BY p.id
+        ORDER BY p.create_time DESC
+    </select>
 </mapper>

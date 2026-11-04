@@ -7,6 +7,8 @@ import com.coffee.common.result.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 /**
  * 后台订单管理接口
  */
@@ -27,8 +29,8 @@ public class AdminOrderController {
 
     // 订单发货
     @PutMapping("/{orderNo}/ship")
-    public Result<Void> shipOrder(@PathVariable String orderNo) {
+    public Result<Map<String, Object>> shipOrder(@PathVariable String orderNo) {
         adminOrderService.shipOrder(orderNo);
-        return Result.success();
+        return Result.success(Map.of("orderNo", orderNo, "status", "已发货"));
     }
 }

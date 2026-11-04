@@ -20,13 +20,13 @@ public interface SubscriptionService {
     List<UserSubscriptionVO> getMySubscriptions(Long userId);
 
     // 暂停订阅
-    void pauseSubscription(Long userId, Long id);
+    UserSubscriptionVO pauseSubscription(Long userId, Long id);
 
     // 跳过本次配送
-    void skipSubscription(Long userId, Long id);
+    UserSubscriptionVO skipSubscription(Long userId, Long id);
 
     // 取消订阅
-    void cancelSubscription(Long userId, Long id);
+    UserSubscriptionVO cancelSubscription(Long userId, Long id);
 
     // 供定时任务调用：处理到期的订阅
     void processExpiredSubscriptions();

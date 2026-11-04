@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.coffee.catalog.mapper.CoffeeSkuMapper">
+
+    <select id="selectInventoryPage" resultType="com.coffee.inventory.vo.InventorySkuPageVO">
+        SELECT
+        s.id AS sku_id,
+        s.product_id,
+        p.name AS product_name,
+        p.origin,
+        s.weight,
+        s.grind_type,
+        s.price,
+        s.stock,
+        s.version
+        FROM coffee_sku s
+        JOIN coffee_product p ON s.product_id = p.id AND p.deleted = 0
+        WHERE s.deleted = 0
+        <if test="keyword != null and keyword != ''">
+            AND (
+                p.name LIKE CONCAT('%', #{keyword}, '%')
+                OR p.origin LIKE CONCAT('%', #{keyword}, '%')
+                OR s.weight LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        ORDER BY s.stock ASC, s.id ASC
+    </select>
+</mapper>

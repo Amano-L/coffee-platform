@@ -8,10 +8,12 @@ import com.coffee.admin.service.AdminOrderService;
 import com.coffee.admin.vo.AdminOrderVO;
 import com.coffee.common.exception.BusinessException;
 import com.coffee.common.result.ResultCode;
+import com.coffee.notification.service.NotificationService;
 import com.coffee.order.entity.CoffeeOrder;
 import com.coffee.order.mapper.CoffeeOrderMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 后台订单管理实现
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 public class AdminOrderServiceImpl implements AdminOrderService {
 
     private final CoffeeOrderMapper orderMapper;
+    private final NotificationService notificationService;
 
     @Override
     public IPage<AdminOrderVO> getOrderPage(Integer page, Integer size) {
@@ -41,6 +44,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void shipOrder(String orderNo) {
         CoffeeOrder order = orderMapper.selectOne(
                 new LambdaQueryWrapper<CoffeeOrder>().eq(CoffeeOrder::getOrderNo, orderNo)
@@ -57,5 +61,12 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         // 更新状态为已发货
         order.setStatus("已发货");
         orderMapper.updateById(order);
+
+        notificationService.send(
+                order.getUserId(),
+                "订单已发货",
+                "订单 " + orderNo + " 已发货，请注意查收。",
+                "ORDER"
+        );
     }
 }

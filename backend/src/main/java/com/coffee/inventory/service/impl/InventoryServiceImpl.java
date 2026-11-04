@@ -13,6 +13,7 @@ import com.coffee.inventory.dto.AdjustStockDTO;
 import com.coffee.inventory.entity.InventoryLog;
 import com.coffee.inventory.mapper.InventoryLogMapper;
 import com.coffee.inventory.service.InventoryService;
+import com.coffee.inventory.vo.InventorySkuPageVO;
 import com.coffee.inventory.vo.InventorySkuVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,14 @@ public class InventoryServiceImpl implements InventoryService {
     private final CoffeeSkuMapper skuMapper;
     private final CoffeeProductMapper productMapper;
     private final InventoryLogMapper inventoryLogMapper;
+
+    @Override
+    public IPage<InventorySkuPageVO> getSkuPage(String keyword, Integer page, Integer size) {
+        int current = page == null || page < 1 ? 1 : page;
+        int pageSize = size == null || size < 1 ? 10 : Math.min(size, 100);
+        String search = StringUtils.hasText(keyword) ? keyword.trim() : null;
+        return skuMapper.selectInventoryPage(new Page<>(current, pageSize), search);
+    }
 
     @Override
     public InventorySkuVO getSkuStock(Long skuId) {

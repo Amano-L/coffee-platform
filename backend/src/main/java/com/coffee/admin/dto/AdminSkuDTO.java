@@ -11,6 +11,9 @@ import java.math.BigDecimal;
  */
 @Data
 public class AdminSkuDTO {
+    /** 已有 SKU 的 ID；为空表示新增 SKU */
+    private Long id;
+
     @NotBlank(message = "重量规格不能为空")
     private String weight;
 

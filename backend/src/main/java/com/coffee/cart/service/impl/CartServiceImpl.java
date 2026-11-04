@@ -8,6 +8,8 @@ import com.coffee.cart.entity.CartItem;
 import com.coffee.cart.mapper.CartItemMapper;
 import com.coffee.cart.mapper.CartMapper;
 import com.coffee.cart.service.CartService;
+import com.coffee.cart.vo.AddCartItemVO;
+import com.coffee.cart.vo.UpdateCartItemVO;
 import com.coffee.cart.vo.CartItemVO;
 import com.coffee.cart.vo.CartVO;
 import com.coffee.catalog.entity.CoffeeSku;
@@ -37,7 +39,7 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void addItem(Long userId, AddCartItemDTO dto) {
+    public AddCartItemVO addItem(Long userId, AddCartItemDTO dto) {
         // 校验 SKU 是否存在且库存充足
         CoffeeSku sku = skuMapper.selectById(dto.getSkuId());
         if (sku == null) {
@@ -69,6 +71,7 @@ public class CartServiceImpl implements CartService {
             existingItem.setQuantity(newQuantity);
             existingItem.setChecked(1); // 重新加购时默认勾选
             cartItemMapper.updateById(existingItem);
+            return toAddVO(existingItem);
         } else {
             // 新增
             if (dto.getQuantity() > MAX_QUANTITY_PER_ITEM) {
@@ -80,7 +83,16 @@ public class CartServiceImpl implements CartService {
             newItem.setQuantity(dto.getQuantity());
             newItem.setChecked(1);
             cartItemMapper.insert(newItem);
+            return toAddVO(newItem);
         }
+    }
+
+    private AddCartItemVO toAddVO(CartItem item) {
+        AddCartItemVO vo = new AddCartItemVO();
+        vo.setCartItemId(item.getId());
+        vo.setSkuId(item.getSkuId());
+        vo.setQuantity(item.getQuantity());
+        return vo;
     }
 
     @Override
@@ -105,7 +117,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public void updateItem(Long userId, Long cartItemId, UpdateCartItemDTO dto) {
+    public UpdateCartItemVO updateItem(Long userId, Long cartItemId, UpdateCartItemDTO dto) {
         CartItem item = getValidCartItem(userId, cartItemId);
         
         if (dto.getQuantity() != null) {
@@ -121,6 +133,12 @@ public class CartServiceImpl implements CartService {
         }
         
         cartItemMapper.updateById(item);
+
+        UpdateCartItemVO vo = new UpdateCartItemVO();
+        vo.setId(item.getId());
+        vo.setQuantity(item.getQuantity());
+        vo.setChecked(item.getChecked());
+        return vo;
     }
 
     @Override

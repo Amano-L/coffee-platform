@@ -7,6 +7,10 @@ import com.coffee.catalog.mapper.CoffeeProductMapper;
 import com.coffee.catalog.mapper.CoffeeSkuMapper;
 import com.coffee.common.exception.BusinessException;
 import com.coffee.common.result.ResultCode;
+import com.coffee.common.util.RabbitMqUtil;
+import com.coffee.inventory.entity.InventoryLog;
+import com.coffee.inventory.mapper.InventoryLogMapper;
+import com.coffee.notification.service.NotificationService;
 import com.coffee.order.entity.CoffeeOrder;
 import com.coffee.order.entity.CoffeeOrderItem;
 import com.coffee.order.mapper.CoffeeOrderItemMapper;
@@ -53,6 +57,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final CoffeeOrderMapper orderMapper;
     private final CoffeeOrderItemMapper orderItemMapper;
     private final UserAddressMapper addressMapper;
+    private final NotificationService notificationService;
+    private final InventoryLogMapper inventoryLogMapper;
+    private final RabbitMqUtil rabbitMqUtil;
 
     // 注入自身代理，解决 @Transactional 自调用失效问题
     @Autowired
@@ -104,6 +111,13 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
         userSubscriptionMapper.insert(sub);
 
+        notificationService.send(
+                userId,
+                "订阅成功",
+                "你已成功订阅「" + plan.getName() + "」，下次配送日期为 " + sub.getNextDeliveryDate() + "。",
+                "SUBSCRIPTION"
+        );
+
         return toVO(sub, plan);
     }
 
@@ -119,17 +133,26 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
-    public void pauseSubscription(Long userId, Long id) {
+    public UserSubscriptionVO pauseSubscription(Long userId, Long id) {
         UserSubscription sub = getValidSubscription(userId, id);
         if (!"ACTIVE".equals(sub.getStatus())) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "当前状态无法暂停");
         }
         sub.setStatus("PAUSED");
         userSubscriptionMapper.updateById(sub);
+
+        notificationService.send(
+                userId,
+                "订阅已暂停",
+                "你的订阅已暂停，暂停期间不会生成新的配送订单。",
+                "SUBSCRIPTION"
+        );
+        SubscriptionPlan plan = planMapper.selectById(sub.getPlanId());
+        return toVO(sub, plan);
     }
 
     @Override
-    public void skipSubscription(Long userId, Long id) {
+    public UserSubscriptionVO skipSubscription(Long userId, Long id) {
         UserSubscription sub = getValidSubscription(userId, id);
         if (!"ACTIVE".equals(sub.getStatus())) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "当前状态无法跳过");
@@ -138,16 +161,33 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         // 顺延一次周期
         sub.setNextDeliveryDate(calculateNextDate(sub.getNextDeliveryDate(), plan.getPeriod()));
         userSubscriptionMapper.updateById(sub);
+
+        notificationService.send(
+                userId,
+                "已跳过本次配送",
+                "「" + plan.getName() + "」本次配送已跳过，下次配送日期为 " + sub.getNextDeliveryDate() + "。",
+                "SUBSCRIPTION"
+        );
+        return toVO(sub, plan);
     }
 
     @Override
-    public void cancelSubscription(Long userId, Long id) {
+    public UserSubscriptionVO cancelSubscription(Long userId, Long id) {
         UserSubscription sub = getValidSubscription(userId, id);
+        SubscriptionPlan plan = planMapper.selectById(sub.getPlanId());
         if ("CANCELLED".equals(sub.getStatus())) {
-            return; // 幂等
+            return toVO(sub, plan); // 幂等
         }
         sub.setStatus("CANCELLED");
         userSubscriptionMapper.updateById(sub);
+
+        notificationService.send(
+                userId,
+                "订阅已取消",
+                "你的订阅已取消，将不再产生新的订阅订单。",
+                "SUBSCRIPTION"
+        );
+        return toVO(sub, plan);
     }
 
     // ================= 定时任务核心逻辑 =================
@@ -183,11 +223,22 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             throw new BusinessException(ResultCode.NOT_FOUND, "SKU不存在");
         }
 
+        // 先生成订单号，便于库存流水与订单关联
+        String orderNo = "SUB" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
+                + ThreadLocalRandom.current().nextInt(1000, 9999);
+
         // 1. 扣减库存 (乐观锁)
         int affected = skuMapper.deductStock(sku.getId(), 1, sku.getVersion());
         if (affected == 0) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "库存不足");
         }
+
+        InventoryLog preserveLog = new InventoryLog();
+        preserveLog.setSkuId(sku.getId());
+        preserveLog.setOrderNo(orderNo);
+        preserveLog.setChangeNum(-1);
+        preserveLog.setType("PRESERVE");
+        inventoryLogMapper.insert(preserveLog);
 
         // 2. 获取默认地址
         UserAddress address = addressMapper.selectOne(
@@ -201,9 +252,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         }
 
         // 3. 生成订单
-        String orderNo = "SUB" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
-                + ThreadLocalRandom.current().nextInt(1000, 9999);
-
         CoffeeOrder order = new CoffeeOrder();
         order.setOrderNo(orderNo);
         order.setUserId(sub.getUserId());
@@ -238,6 +286,16 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         sub.setNextDeliveryDate(calculateNextDate(sub.getNextDeliveryDate(), plan.getPeriod()));
         userSubscriptionMapper.updateById(sub);
 
+        // 订阅订单同样需要 30 分钟未支付自动取消
+        rabbitMqUtil.sendOrderTimeoutMessage(orderNo);
+
+        notificationService.send(
+                sub.getUserId(),
+                "订阅订单已生成",
+                "订阅「" + plan.getName() + "」已生成订单 " + orderNo + "，请及时支付。",
+                "SUBSCRIPTION"
+        );
+
         log.info("成功为订阅 {} 生成订单 {}", sub.getId(), orderNo);
     }
 
@@ -271,6 +329,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private UserSubscriptionVO toVO(UserSubscription sub, SubscriptionPlan plan) {
         UserSubscriptionVO vo = new UserSubscriptionVO();
         vo.setId(sub.getId());
+        vo.setSubscriptionId(sub.getId());
         vo.setStatus(sub.getStatus());
         vo.setNextDeliveryDate(sub.getNextDeliveryDate());
         vo.setCreateTime(sub.getCreateTime());

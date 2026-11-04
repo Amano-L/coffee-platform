@@ -8,11 +8,16 @@ import com.coffee.cart.entity.Cart;
 import com.coffee.cart.entity.CartItem;
 import com.coffee.cart.mapper.CartItemMapper;
 import com.coffee.cart.mapper.CartMapper;
+import com.coffee.catalog.entity.CoffeeProduct;
 import com.coffee.catalog.entity.CoffeeSku;
+import com.coffee.catalog.mapper.CoffeeProductMapper;
 import com.coffee.catalog.mapper.CoffeeSkuMapper;
 import com.coffee.common.exception.BusinessException;
 import com.coffee.common.result.ResultCode;
 import com.coffee.common.util.RabbitMqUtil;
+import com.coffee.inventory.entity.InventoryLog;
+import com.coffee.inventory.mapper.InventoryLogMapper;
+import com.coffee.notification.service.NotificationService;
 import com.coffee.order.dto.CreateOrderDTO;
 import com.coffee.order.entity.CoffeeOrder;
 import com.coffee.order.entity.CoffeeOrderItem;
@@ -34,6 +39,7 @@ import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -49,10 +55,13 @@ public class OrderServiceImpl implements OrderService {
     private final CoffeeOrderMapper orderMapper;
     private final CoffeeOrderItemMapper orderItemMapper;
     private final CoffeeSkuMapper skuMapper;
+    private final CoffeeProductMapper productMapper;
     private final UserAddressMapper addressMapper;
     private final CartMapper cartMapper;
     private final CartItemMapper cartItemMapper;
     private final RabbitMqUtil rabbitMqUtil;
+    private final NotificationService notificationService;
+    private final InventoryLogMapper inventoryLogMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -83,23 +92,36 @@ public class OrderServiceImpl implements OrderService {
                 + ThreadLocalRandom.current().nextInt(1000, 9999);
 
         BigDecimal totalAmount = BigDecimal.ZERO;
+        List<OrderItemSnapshot> snapshots = new ArrayList<>();
 
-        // 4. 扣减库存 & 计算金额
+        // 4. 扣减库存 & 计算金额，同时记录商品快照
         for (CartItem item : cartItems) {
             CoffeeSku sku = skuMapper.selectById(item.getSkuId());
             if (sku == null) {
                 throw new BusinessException(ResultCode.NOT_FOUND, "商品规格不存在");
             }
-            
+
             // 乐观锁扣减库存
             int affectedRows = skuMapper.deductStock(sku.getId(), item.getQuantity(), sku.getVersion());
             if (affectedRows == 0) {
                 throw new BusinessException(ResultCode.BAD_REQUEST, "商品 [" + sku.getId() + "] 库存不足，请重新选择");
             }
 
+            CoffeeProduct product = productMapper.selectById(sku.getProductId());
+            String productName = product != null ? product.getName() : "咖啡商品";
+
+            // 记录库存预占流水
+            InventoryLog preserveLog = new InventoryLog();
+            preserveLog.setSkuId(sku.getId());
+            preserveLog.setOrderNo(orderNo);
+            preserveLog.setChangeNum(-item.getQuantity());
+            preserveLog.setType("PRESERVE");
+            inventoryLogMapper.insert(preserveLog);
+
             // 累加金额
             BigDecimal itemTotal = sku.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
             totalAmount = totalAmount.add(itemTotal);
+            snapshots.add(new OrderItemSnapshot(sku.getId(), productName, sku.getPrice(), item.getQuantity()));
         }
 
         // 5. 插入订单主表
@@ -114,18 +136,14 @@ public class OrderServiceImpl implements OrderService {
         order.setReceiverAddress(address.getProvince() + address.getCity() + address.getDistrict() + address.getDetailAddress());
         orderMapper.insert(order);
 
-        // 6. 插入订单项表（保存商品快照）
-        for (CartItem item : cartItems) {
-            CoffeeSku sku = skuMapper.selectById(item.getSkuId());
-            // 查一下商品名用于快照（这里简化查一下，实际可以批量查）
-            com.coffee.catalog.entity.CoffeeProduct product = null; // 为了代码完整，你需要注入 CoffeeProductMapper 去查
-            
+        // 6. 插入订单项表（使用真实的商品名称/价格快照）
+        for (OrderItemSnapshot snapshot : snapshots) {
             CoffeeOrderItem orderItem = new CoffeeOrderItem();
             orderItem.setOrderId(order.getId());
-            orderItem.setSkuId(item.getSkuId());
-            orderItem.setProductName("咖啡商品"); // 此处简化，可以替换为 product.getName()
-            orderItem.setPrice(sku.getPrice());
-            orderItem.setQuantity(item.getQuantity());
+            orderItem.setSkuId(snapshot.skuId());
+            orderItem.setProductName(snapshot.productName());
+            orderItem.setPrice(snapshot.price());
+            orderItem.setQuantity(snapshot.quantity());
             orderItemMapper.insert(orderItem);
         }
 
@@ -135,7 +153,15 @@ public class OrderServiceImpl implements OrderService {
         // 8. 发送延迟消息（30分钟超时取消）
         rabbitMqUtil.sendOrderTimeoutMessage(orderNo);
 
-        // 9. 返回
+        // 9. 站内通知
+        notificationService.send(
+                userId,
+                "订单已创建",
+                "订单 " + orderNo + " 已创建，请在 30 分钟内完成支付。",
+                "ORDER"
+        );
+
+        // 10. 返回
         OrderSubmitVO vo = new OrderSubmitVO();
         vo.setOrderNo(order.getOrderNo());
         vo.setTotalAmount(totalAmount);
@@ -178,9 +204,23 @@ public class OrderServiceImpl implements OrderService {
         );
         for (CoffeeOrderItem item : items) {
             skuMapper.addStock(item.getSkuId(), item.getQuantity());
+
+            InventoryLog releaseLog = new InventoryLog();
+            releaseLog.setSkuId(item.getSkuId());
+            releaseLog.setOrderNo(orderNo);
+            releaseLog.setChangeNum(item.getQuantity());
+            releaseLog.setType("RELEASE");
+            inventoryLogMapper.insert(releaseLog);
         }
 
-        log.info("订单 {} 超时未支付，已成功取消并释放库存", orderNo);
+        notificationService.send(
+                order.getUserId(),
+                "订单已取消",
+                "订单 " + orderNo + " 已取消，预占库存已释放。",
+                "ORDER"
+        );
+
+        log.info("订单 {} 未支付，已成功取消并释放库存", orderNo);
     }
 
     @Override
@@ -277,7 +317,16 @@ public class OrderServiceImpl implements OrderService {
                             .eq(CoffeeOrder::getStatus, "待支付")
                             .set(CoffeeOrder::getStatus, "已支付")
             );
-            // 真实业务里这里可能会发货、加积分、发通知等
+            notificationService.send(
+                    order.getUserId(),
+                    "订单已支付",
+                    "订单 " + orderNo + " 支付成功，我们会尽快安排发货。",
+                    "ORDER"
+            );
         }
+    }
+
+    /** 下单过程中用于保存订单项快照的临时结构 */
+    private record OrderItemSnapshot(Long skuId, String productName, BigDecimal price, Integer quantity) {
     }
 }

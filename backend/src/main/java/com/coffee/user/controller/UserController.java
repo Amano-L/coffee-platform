@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 用户接口
@@ -88,9 +89,9 @@ public class UserController {
 
     // 设置默认
     @PutMapping("/addresses/{id}/default")
-    public Result<Void> setDefaultAddress(@PathVariable Long id) {
+    public Result<Map<String, Object>> setDefaultAddress(@PathVariable Long id) {
         Long userId = SecurityUtil.getCurrentUserId();
         userService.setDefaultAddress(userId, id);
-        return Result.success();
+        return Result.success(Map.of("id", id, "isDefault", 1));
     }
 }

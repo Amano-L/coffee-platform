@@ -44,22 +44,19 @@ public class SubscriptionController {
 
     // 暂停订阅
     @PutMapping("/{id}/pause")
-    public Result<Void> pause(@PathVariable Long id) {
-        subscriptionService.pauseSubscription(SecurityUtil.getCurrentUserId(), id);
-        return Result.success();
+    public Result<UserSubscriptionVO> pause(@PathVariable Long id) {
+        return Result.success(subscriptionService.pauseSubscription(SecurityUtil.getCurrentUserId(), id));
     }
 
     // 跳过本次配送
     @PutMapping("/{id}/skip")
-    public Result<Void> skip(@PathVariable Long id) {
-        subscriptionService.skipSubscription(SecurityUtil.getCurrentUserId(), id);
-        return Result.success();
+    public Result<UserSubscriptionVO> skip(@PathVariable Long id) {
+        return Result.success(subscriptionService.skipSubscription(SecurityUtil.getCurrentUserId(), id));
     }
 
     // 取消订阅
     @PutMapping("/{id}/cancel")
-    public Result<Void> cancel(@PathVariable Long id) {
-        subscriptionService.cancelSubscription(SecurityUtil.getCurrentUserId(), id);
-        return Result.success();
+    public Result<UserSubscriptionVO> cancel(@PathVariable Long id) {
+        return Result.success(subscriptionService.cancelSubscription(SecurityUtil.getCurrentUserId(), id));
     }
 }

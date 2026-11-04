@@ -19,4 +19,6 @@ public class UserInfoVO {
 
     // 头像
     private String avatarUrl;
+
+    private String role;
 }

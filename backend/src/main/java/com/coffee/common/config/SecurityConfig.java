@@ -51,6 +51,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(WHITE_LIST).permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN") // 后台接口需要 ADMIN 权限
+                        .requestMatchers("/api/v1/inventory/**").hasRole("ADMIN") // 库存接口仅管理员
                         .anyRequest().authenticated()
                 )
                 // 无权限时的处理

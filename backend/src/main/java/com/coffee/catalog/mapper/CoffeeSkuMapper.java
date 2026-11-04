@@ -1,7 +1,10 @@
 package com.coffee.catalog.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.coffee.catalog.entity.CoffeeSku;
+import com.coffee.inventory.vo.InventorySkuPageVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Update;
@@ -24,4 +27,10 @@ public interface CoffeeSkuMapper extends BaseMapper<CoffeeSku> {
     // 后台直接覆盖库存并增加版本号（绕过乐观锁拦截器）
     @Update("UPDATE coffee_sku SET stock = #{stock}, version = version + 1 WHERE id = #{id} AND deleted = 0")
     int updateStockDirectly(@Param("id") Long id, @Param("stock") Integer stock);
+
+    // 后台库存列表（按库存升序，方便发现低库存）
+    IPage<InventorySkuPageVO> selectInventoryPage(
+            Page<InventorySkuPageVO> page,
+            @Param("keyword") String keyword
+    );
 }
