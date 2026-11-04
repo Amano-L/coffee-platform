@@ -40,6 +40,9 @@ public class User {
     // 状态：1正常 0禁用
     private Integer status;
 
+    // 角色：USER/ADMIN
+    private String role;
+
     // 创建时间
     private LocalDateTime createTime;
 
@@ -49,4 +52,6 @@ public class User {
     // 逻辑删除：0未删除 1已删除
     @TableLogic
     private Integer deleted;
+
+
 }

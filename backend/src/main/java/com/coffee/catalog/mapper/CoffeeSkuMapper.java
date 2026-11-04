@@ -20,4 +20,8 @@ public interface CoffeeSkuMapper extends BaseMapper<CoffeeSku> {
     // 增加库存（取消订单时释放）
     @Update("UPDATE coffee_sku SET stock = stock + #{num} WHERE id = #{id} AND deleted = 0")
     int addStock(@Param("id") Long id, @Param("num") Integer num);
+
+    // 后台直接覆盖库存并增加版本号（绕过乐观锁拦截器）
+    @Update("UPDATE coffee_sku SET stock = #{stock}, version = version + 1 WHERE id = #{id} AND deleted = 0")
+    int updateStockDirectly(@Param("id") Long id, @Param("stock") Integer stock);
 }
