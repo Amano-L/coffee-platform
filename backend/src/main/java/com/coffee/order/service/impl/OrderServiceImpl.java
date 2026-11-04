@@ -2,6 +2,8 @@ package com.coffee.order.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.coffee.cart.entity.Cart;
 import com.coffee.cart.entity.CartItem;
 import com.coffee.cart.mapper.CartItemMapper;
@@ -17,6 +19,9 @@ import com.coffee.order.entity.CoffeeOrderItem;
 import com.coffee.order.mapper.CoffeeOrderItemMapper;
 import com.coffee.order.mapper.CoffeeOrderMapper;
 import com.coffee.order.service.OrderService;
+import com.coffee.order.vo.OrderDetailVO;
+import com.coffee.order.vo.OrderItemVO;
+import com.coffee.order.vo.OrderListVO;
 import com.coffee.order.vo.OrderSubmitVO;
 import com.coffee.user.entity.UserAddress;
 import com.coffee.user.mapper.UserAddressMapper;
@@ -24,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -175,5 +181,86 @@ public class OrderServiceImpl implements OrderService {
         }
 
         log.info("订单 {} 超时未支付，已成功取消并释放库存", orderNo);
+    }
+
+    @Override
+    public IPage<OrderListVO> getOrderList(Long userId, Integer page, Integer size, String status) {
+        Page<CoffeeOrder> orderPage = new Page<>(page, size);
+        LambdaQueryWrapper<CoffeeOrder> wrapper = new LambdaQueryWrapper<CoffeeOrder>()
+                .eq(CoffeeOrder::getUserId, userId)
+                .orderByDesc(CoffeeOrder::getCreateTime);
+
+        if (StringUtils.hasText(status)) {
+            wrapper.eq(CoffeeOrder::getStatus, status);
+        }
+
+        IPage<CoffeeOrder> result = orderMapper.selectPage(orderPage, wrapper);
+
+        // 转换为 VO
+        return result.convert(order -> {
+            OrderListVO vo = new OrderListVO();
+            vo.setOrderNo(order.getOrderNo());
+            vo.setTotalAmount(order.getTotalAmount());
+            vo.setPayAmount(order.getPayAmount());
+            vo.setStatus(order.getStatus());
+            vo.setCreateTime(order.getCreateTime());
+            return vo;
+        });
+    }
+
+    @Override
+    public OrderDetailVO getOrderDetail(Long userId, String orderNo) {
+        CoffeeOrder order = orderMapper.selectOne(
+                new LambdaQueryWrapper<CoffeeOrder>()
+                        .eq(CoffeeOrder::getOrderNo, orderNo)
+                        .eq(CoffeeOrder::getUserId, userId) // 防越权
+        );
+
+        if (order == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "订单不存在");
+        }
+
+        OrderDetailVO vo = new OrderDetailVO();
+        vo.setOrderNo(order.getOrderNo());
+        vo.setTotalAmount(order.getTotalAmount());
+        vo.setPayAmount(order.getPayAmount());
+        vo.setStatus(order.getStatus());
+        vo.setReceiverName(order.getReceiverName());
+        vo.setReceiverPhone(order.getReceiverPhone());
+        vo.setReceiverAddress(order.getReceiverAddress());
+        vo.setCreateTime(order.getCreateTime());
+
+        // 查订单项
+        List<CoffeeOrderItem> items = orderItemMapper.selectList(
+                new LambdaQueryWrapper<CoffeeOrderItem>().eq(CoffeeOrderItem::getOrderId, order.getId())
+        );
+
+        List<OrderItemVO> itemVOs = items.stream().map(item -> {
+            OrderItemVO itemVO = new OrderItemVO();
+            itemVO.setSkuId(item.getSkuId());
+            itemVO.setProductName(item.getProductName());
+            itemVO.setPrice(item.getPrice());
+            itemVO.setQuantity(item.getQuantity());
+            return itemVO;
+        }).collect(Collectors.toList());
+
+        vo.setItems(itemVOs);
+        return vo;
+    }
+
+    @Override
+    public void manualCancelOrder(Long userId, String orderNo) {
+        CoffeeOrder order = orderMapper.selectOne(
+                new LambdaQueryWrapper<CoffeeOrder>()
+                        .eq(CoffeeOrder::getOrderNo, orderNo)
+                        .eq(CoffeeOrder::getUserId, userId)
+        );
+
+        if (order == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "订单不存在");
+        }
+
+        // 复用超时取消的逻辑，里面有状态判断和库存回滚
+        cancelOrder(orderNo);
     }
 }
