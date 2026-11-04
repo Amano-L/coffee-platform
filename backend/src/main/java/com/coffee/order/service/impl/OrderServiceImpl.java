@@ -263,4 +263,21 @@ public class OrderServiceImpl implements OrderService {
         // 复用超时取消的逻辑，里面有状态判断和库存回滚
         cancelOrder(orderNo);
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateOrderToPaid(String orderNo) {
+        CoffeeOrder order = orderMapper.selectOne(
+                new LambdaQueryWrapper<CoffeeOrder>().eq(CoffeeOrder::getOrderNo, orderNo)
+        );
+        if (order != null && "待支付".equals(order.getStatus())) {
+            orderMapper.update(null,
+                    new LambdaUpdateWrapper<CoffeeOrder>()
+                            .eq(CoffeeOrder::getId, order.getId())
+                            .eq(CoffeeOrder::getStatus, "待支付")
+                            .set(CoffeeOrder::getStatus, "已支付")
+            );
+            // 真实业务里这里可能会发货、加积分、发通知等
+        }
+    }
 }

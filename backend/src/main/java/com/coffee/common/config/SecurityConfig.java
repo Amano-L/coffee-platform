@@ -29,6 +29,7 @@ public class SecurityConfig {
             "/api/v1/auth/login",
             "/api/v1/products/**",
             "/api/v1/subscriptions/plans",
+            "/api/v1/payments/callback", // 支付回调
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",

@@ -22,4 +22,7 @@ public interface OrderService {
 
     // 手动取消订单
     void manualCancelOrder(Long userId, String orderNo);
+
+    // 支付成功后更新订单状态
+    void updateOrderToPaid(String orderNo);
 }
