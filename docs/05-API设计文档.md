@@ -2,7 +2,7 @@
 
 | 项目名称 | 咖啡电商与订阅平台            |
 | -------- | ----------------------------- |
-| 文档版本 | v1.4                          |
+| 文档版本 | v1.5                          |
 | 编制人   | 项目经理                      |
 | 编制日期 | 2026-10-14                    |
 | 状态     | 已评审                        |
@@ -1175,6 +1175,55 @@ json
 
 
 
+### 8.4 库存 SKU 列表
+
+| 项目 | 内容                     |
+| :--- | :----------------------- |
+| 方法 | GET                      |
+| 路径 | `/inventory/skus`        |
+| 鉴权 | 是（管理员）             |
+| 说明 | 分页查询 SKU 库存，按库存升序 |
+
+**Query 参数**
+
+| 参数    | 类型   | 必填 | 说明                       |
+| :------ | :----- | :--- | :------------------------- |
+| keyword | string | 否   | 匹配商品名称/产区/重量规格 |
+| page    | int    | 否   | 页码，默认 1               |
+| size    | int    | 否   | 每页条数，默认 10          |
+
+**响应示例**
+
+json
+
+```
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "records": [
+      {
+        "skuId": 1,
+        "productId": 1,
+        "productName": "埃塞俄比亚 耶加雪菲",
+        "origin": "埃塞俄比亚",
+        "weight": "250g",
+        "grindType": "WHOLE_BEAN",
+        "price": 68.00,
+        "stock": 100,
+        "version": 0
+      }
+    ],
+    "total": 1,
+    "current": 1,
+    "size": 10
+  },
+  "traceId": "a1b2c3d4"
+}
+```
+
+
+
 ## 9. 订阅模块
 
 ### 9.1 获取订阅计划
@@ -1377,7 +1426,17 @@ json
 | 方法 | GET                    |
 | 路径 | `/admin/products`      |
 | 鉴权 | 是（管理员）           |
-| 说明 | 分页查询商品，支持筛选 |
+| 说明 | 分页查询商品，支持筛选（含下架商品） |
+
+**Query 参数**
+
+| 参数       | 类型   | 必填 | 说明                      |
+| :--------- | :----- | :--- | :------------------------ |
+| page       | int    | 否   | 页码，默认 1              |
+| size       | int    | 否   | 每页条数，默认 10         |
+| keyword    | string | 否   | 匹配商品名称/产区         |
+| roastLevel | string | 否   | 烘焙度：LIGHT/MEDIUM/DARK |
+| status     | int    | 否   | 上架状态：1上架 0下架     |
 
 **响应示例**
 
@@ -1392,7 +1451,12 @@ json
       {
         "id": 1,
         "name": "埃塞俄比亚 耶加雪菲",
+        "origin": "埃塞俄比亚",
         "roastLevel": "LIGHT",
+        "flavorTags": "花香,柑橘",
+        "processMethod": "WASHED",
+        "minPrice": 68.00,
+        "coverUrl": "https://xxx.com/1.jpg",
         "status": 1,
         "createTime": "2026-10-14 10:00:00"
       }
@@ -1473,7 +1537,7 @@ json
 | 方法 | PUT                    |
 | 路径 | `/admin/products/{id}` |
 | 鉴权 | 是（管理员）           |
-| 说明 | 修改商品信息           |
+| 说明 | 修改商品信息，可同时更新或新增 SKU |
 
 **请求体**
 
@@ -1483,9 +1547,26 @@ json
 {
   "name": "哥伦比亚 慧兰（新）",
   "roastLevel": "MEDIUM",
-  "description": "更新描述"
+  "description": "更新描述",
+  "skus": [
+    {
+      "id": 1,
+      "weight": "250g",
+      "grindType": "WHOLE_BEAN",
+      "price": 99.00,
+      "stock": 120
+    },
+    {
+      "weight": "500g",
+      "grindType": "GROUND",
+      "price": 168.00,
+      "stock": 50
+    }
+  ]
 }
 ```
+
+> `skus` 中带 `id` 的项更新已有 SKU，不带 `id` 的项新增 SKU；未传入的已有 SKU 保留不变。
 
 
 
@@ -1632,9 +1713,12 @@ json
       {
         "id": 1,
         "userId": 1,
+        "username": "coffee_lover",
         "planName": "每月精选",
+        "period": "MONTHLY",
         "status": "ACTIVE",
-        "nextDeliveryDate": "2026-11-14"
+        "nextDeliveryDate": "2026-11-14",
+        "createTime": "2026-10-14 10:00:00"
       }
     ],
     "total": 1,
@@ -1676,6 +1760,128 @@ json
 
 
 
+### 10.9 后台商品详情
+
+| 项目 | 内容                          |
+| :--- | :---------------------------- |
+| 方法 | GET                           |
+| 路径 | `/admin/products/{id}`        |
+| 鉴权 | 是（管理员）                  |
+| 说明 | 查询商品详情，包含下架商品与 SKU |
+
+**响应示例**
+
+json
+
+```
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "name": "埃塞俄比亚 耶加雪菲",
+    "origin": "埃塞俄比亚",
+    "roastLevel": "LIGHT",
+    "flavorTags": ["花香", "柑橘"],
+    "processMethod": "WASHED",
+    "description": "经典水洗耶加雪菲",
+    "coverUrl": "https://xxx.com/1.jpg",
+    "status": 1,
+    "createTime": "2026-10-14 10:00:00",
+    "skus": [
+      {
+        "id": 1,
+        "weight": "250g",
+        "grindType": "WHOLE_BEAN",
+        "price": 68.00,
+        "stock": 100
+      }
+    ]
+  },
+  "traceId": "a1b2c3d4"
+}
+```
+
+
+
+### 10.10 删除商品
+
+| 项目 | 内容                        |
+| :--- | :-------------------------- |
+| 方法 | DELETE                      |
+| 路径 | `/admin/products/{id}`      |
+| 鉴权 | 是（管理员）                |
+| 说明 | 逻辑删除商品及其 SKU        |
+
+**响应示例**
+
+json
+
+```
+{
+  "code": 0,
+  "message": "success",
+  "data": null,
+  "traceId": "a1b2c3d4"
+}
+```
+
+
+
+### 10.11 后台暂停订阅
+
+| 项目 | 内容                               |
+| :--- | :--------------------------------- |
+| 方法 | PUT                                |
+| 路径 | `/admin/subscriptions/{id}/pause`  |
+| 鉴权 | 是（管理员）                       |
+| 说明 | 管理员暂停指定订阅，不再生成订单   |
+
+**响应示例**
+
+json
+
+```
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "status": "PAUSED"
+  },
+  "traceId": "a1b2c3d4"
+}
+```
+
+
+
+### 10.12 后台取消订阅
+
+| 项目 | 内容                               |
+| :--- | :--------------------------------- |
+| 方法 | PUT                                |
+| 路径 | `/admin/subscriptions/{id}/cancel` |
+| 鉴权 | 是（管理员）                       |
+| 说明 | 管理员取消指定订阅                 |
+
+**响应示例**
+
+json
+
+```
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "status": "CANCELLED"
+  },
+  "traceId": "a1b2c3d4"
+}
+```
+
+
+
 ## 11. 通知模块（P1）
 
 ### 11.1 我的通知
@@ -1701,6 +1907,7 @@ json
         "id": 1,
         "title": "订单已支付",
         "content": "您的订单 COF202610140001 已支付成功",
+        "type": "ORDER",
         "isRead": 0,
         "createTime": "2026-10-14 10:05:00"
       }
@@ -1751,3 +1958,4 @@ json
 | v1.2 | 2026-10-15 | 项目经理 | 补充注册/登录相关错误码（4007-4010）       |
 | v1.3 | 2026-11-04 | 项目经理 | 10.2 新增商品接口补充完整的 SKU 列表入参   |
 | v1.4 | 2026-11-04 | 项目经理 | 8.3 库存流水补充ADJUST类型说明             |
+| v1.5 | 2026-11-04 | 项目经理 | 补齐后台商品列表/详情/删除、SKU 更新、后台订阅暂停/取消、库存列表；通知补充 type 字段 |
